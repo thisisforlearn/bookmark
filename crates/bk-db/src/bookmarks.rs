@@ -23,9 +23,11 @@ pub struct Bookmark {
     pub created_at: i64,
     pub updated_at: i64,
     pub crawled_at: Option<i64>,
+    /// 0..1 signal of how much real content the page had.
+    pub quality: f32,
 }
 
-const COLS: &str = "id, user_id, url_norm, url, title, description, text, text_hash, lang, site, status, note, pinned, created_at, updated_at, crawled_at";
+const COLS: &str = "id, user_id, url_norm, url, title, description, text, text_hash, lang, site, status, note, pinned, created_at, updated_at, crawled_at, quality";
 
 fn row_to_bookmark(r: &rusqlite::Row<'_>) -> rusqlite::Result<Bookmark> {
     Ok(Bookmark {
@@ -45,6 +47,7 @@ fn row_to_bookmark(r: &rusqlite::Row<'_>) -> rusqlite::Result<Bookmark> {
         created_at: r.get(13)?,
         updated_at: r.get(14)?,
         crawled_at: r.get(15)?,
+        quality: r.get::<_, f64>(16).unwrap_or(1.0) as f32,
     })
 }
 
@@ -161,6 +164,7 @@ pub fn set_note(conn: &rusqlite::Connection, user_id: Id, id: Id, note: &str) ->
 }
 
 /// Update the crawl result for a bookmark (title/description/text/site/lang).
+#[allow(clippy::too_many_arguments)]
 pub fn apply_crawl(
     conn: &rusqlite::Connection,
     id: Id,
@@ -169,11 +173,12 @@ pub fn apply_crawl(
     text: &str,
     lang: Option<&str>,
     site: &str,
+    quality: f32,
 ) -> Result<()> {
     let hash = bk_core::xxh3_str(text) as i64;
     conn.execute(
-        "UPDATE bookmarks SET title = ?, description = ?, text = ?, text_hash = ?, lang = ?, site = ?, status = 'ok', crawled_at = ?, updated_at = ? WHERE id = ?",
-        rusqlite::params![title, description, text, hash, lang, site, bk_core::now(), bk_core::now(), id.inner()],
+        "UPDATE bookmarks SET title = ?, description = ?, text = ?, text_hash = ?, lang = ?, site = ?, quality = ?, status = 'ok', crawled_at = ?, updated_at = ? WHERE id = ?",
+        rusqlite::params![title, description, text, hash, lang, site, quality, bk_core::now(), bk_core::now(), id.inner()],
     )?;
     Ok(())
 }
@@ -226,9 +231,8 @@ mod tests {
     use super::*;
 
     fn db() -> rusqlite::Connection {
-        let c = rusqlite::Connection::open_in_memory().unwrap();
-        c.execute_batch(include_str!("../../../migrations/0001_init.sql"))
-            .unwrap();
+        let mut c = rusqlite::Connection::open_in_memory().unwrap();
+        crate::migrate::apply(&mut c).unwrap();
         c.execute("INSERT INTO users(id, username, pw_hash, role, created_at, settings_json) VALUES (1,'a','x','user',0,'{}')", []).unwrap();
         c
     }

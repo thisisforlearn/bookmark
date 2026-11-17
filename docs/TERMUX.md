@@ -81,6 +81,21 @@ bookmark doctor        # "SIMD kernels" and "version" lines
 ldd "$(command -v bookmark)"   # musl build prints "not a dynamic executable"
 ```
 
+## Models
+
+```sh
+bookmark model install          # recommended: download the prebuilt models
+```
+
+Training *works* on the phone but is much slower than on a laptop — the pure-Rust trainer
+is single-threaded and phones throttle. If you want custom models, train on a computer and
+copy `spell.bkmdl`, `embed.bkmdl`, `rank.bkmdl` into `~/.bookmark/models/`.
+
+```sh
+# on a computer, then copy the files over
+bookmark model train all --mode full
+```
+
 ## Notes
 
 - The Android build is smaller and faster to start than the musl one because it uses

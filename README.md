@@ -4,7 +4,7 @@ A self-hostable, multi-user bookmark server that keeps **text, links, screenshot
 **searchable copy of every page**, with typo-tolerant search powered by small models you can
 train yourself. One static binary. Runs on a laptop, a server, or a phone via Termux.
 
-[Quickstart](#quickstart) · [Termux](#termux-android) · [Windows](#windows) · [LAN & Tailscale](#lan-and-tailscale) ·
+[Quickstart](#quickstart) · [Install as an app](#install-as-an-app) · [Termux](#termux-android) · [Windows](#windows) · [LAN & Tailscale](#lan-and-tailscale) ·
 [Search syntax](#search-syntax) · [Models](#models-and-training) · [Backup](#backup-and-export) ·
 [Security](#security) · [Troubleshooting](#troubleshooting) · [License](#license)
 
@@ -44,8 +44,10 @@ or a hosted SaaS (your reading history on someone else's disk). This is neither:
 | Bookmarks | URLs, plain text notes, tags, pinning, notes |
 | Crawling | Server-side fetch, readability extraction, robots.txt, SSRF guard, retries |
 | Screenshots | Client uploads PNG/JPEG/WebP; auto-resized, deduplicated by SHA-256 |
+| Installable app | PWA with an Android **share target** — share a link to save it |
+| Quality signal | Thin/junk pages are scored and sink below real articles |
 | Search | FTS5 + trigram, SymSpell typo correction, query operators, re-ranking |
-| Models | Spell corrector, embedding encoder, LTR re-ranker as one portable `.bkmdl` |
+| Models | Spell corrector, embedding encoder, LTR re-ranker as `.bkmdl`; download or train |
 | Sharing | Revocable public share links with optional expiry |
 | Data | JSON export/import, checksummed `.tar.zst` backups |
 | Ops | `bookmark doctor`, watchdog, systemd unit, Termux boot hook |
@@ -68,6 +70,13 @@ bookmark serve --host 127.0.0.1 --port 8080
 ```
 
 Open <http://127.0.0.1:8080>, sign in, and paste a URL into **Add a bookmark**.
+
+The installer also downloads the default search models, so typo correction and semantic
+search work immediately. To fetch or refresh them later:
+
+```sh
+bookmark model install      # downloads the latest models from the release
+```
 
 ### From source
 
@@ -96,6 +105,29 @@ cargo build --release -p bk-cli
 
 If you see `linker link.exe not found`, you are on the MSVC target without Visual Studio
 Build Tools. See [docs/WINDOWS.md](docs/WINDOWS.md) for all three options.
+
+---
+
+## Install as an app
+
+bookmark is a progressive web app, so it installs to your phone's home screen and
+registers itself in Android's **Share** menu — no APK, no app store.
+
+1. Open the server URL in Chrome (or Safari on iOS).
+2. Chrome shows an **Install** prompt; or use *⋮ → Add to Home screen*, or the
+   **Install app** button on the Settings page.
+3. Long-press any link in another app → **Share → bookmark**. The link is saved to
+   your library instantly, with a toast confirming it.
+
+That second step is the whole point: saving becomes one gesture from anywhere.
+
+The same app works against a server on your LAN, over Tailscale, or at
+`http://127.0.0.1:8080` on the device itself. Two common setups:
+
+| Setup | Who it's for | How |
+|---|---|---|
+| **All-in-one** | Most people | Run bookmark on a laptop/Pi, install the PWA on your phone, point it at the LAN/Tailscale URL. Models come from the installer. |
+| **Nerd mode** | You | Run bookmark *on the phone* in Termux (`bookmark serve`), models included, then install the PWA from `http://127.0.0.1:8080`. Nothing leaves the device. |
 
 ---
 
@@ -223,6 +255,9 @@ loaded with `mmap`, validated with CRC32C, and never block the query path.
 Training runs entirely in Rust — no Python, no PyTorch, no GPU required.
 
 ```sh
+# download prebuilt models (no training, recommended for most people)
+bookmark model install
+
 # quick sanity check (~seconds)
 bookmark model train all --mode smoke
 
@@ -238,7 +273,8 @@ bookmark model verify
 ```
 
 Training uses your bookmarks' text plus a built-in seed vocabulary, so it works on a fresh
-install and improves as you save more. The spell model is a char-n-gram MLP trained with SGD on
+install and improves as you save more. On Android it works but is **slow** — download or
+train the models on a computer, then copy the `.bkmdl` files to the phone. The spell model is a char-n-gram MLP trained with SGD on
 synthetic keyboard-typo pairs; the embedding model is a deterministic hashing vectorizer over
 character n-grams.
 

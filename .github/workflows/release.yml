@@ -124,3 +124,29 @@ jobs:
         with:
           files: bookmark-x86_64-pc-windows-msvc.exe*
           generate_release_notes: true
+
+  models:
+    # Build the default model bundle from the built-in seed vocabulary and
+    # attach it so users can `bookmark model install` without training.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build trainer
+        run: cargo build --release -p bk-cli
+      - name: Train default models
+        run: |
+          set -euo pipefail
+          export BOOKMARK_CONFIG="$PWD/ci-config.toml"
+          printf 'data_dir = "%s/ci-data"\nmodels_dir = "%s/ci-data/models"\n' "$PWD" "$PWD" > "$BOOKMARK_CONFIG"
+          ./target/release/bookmark model train all --mode quick
+          cp ci-data/models/spell.bkmdl ci-data/models/embed.bkmdl ci-data/models/rank.bkmdl .
+          sha256sum spell.bkmdl embed.bkmdl rank.bkmdl > models.sha256
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            spell.bkmdl
+            embed.bkmdl
+            rank.bkmdl
+            models.sha256

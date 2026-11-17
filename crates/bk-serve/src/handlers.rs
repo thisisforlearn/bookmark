@@ -204,6 +204,7 @@ fn to_hit(
         tags: tag_list,
         pinned: b.pinned,
         has_shot,
+        low_quality: b.quality < 0.35,
         initial: initial_of(&b.title, &b.url),
     }
 }
@@ -232,6 +233,7 @@ fn search_hits_to_views(state: AppState, resp: &SearchResponse, _user: Id) -> Ve
                 tags: h.tags.clone(),
                 pinned: b.pinned,
                 has_shot: shots.contains(&b.id),
+                low_quality: b.quality < 0.35,
                 initial: initial_of(&b.title, &b.url),
             }
         })
@@ -800,6 +802,50 @@ pub async fn api_search(
         "degraded": resp.degraded,
     }))
     .into_response()
+}
+
+#[derive(Deserialize)]
+pub struct ShareForm {
+    pub target: String,
+    #[serde(default)]
+    pub tags: String,
+}
+
+/// Save a bookmark from the Android share sheet.
+pub async fn api_share(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Form(form): Form<ShareForm>,
+) -> Response {
+    let user = match auth::current_user(&state, &headers) {
+        Some(u) => u,
+        None => return unauthorized_json(),
+    };
+    let tag_list: Vec<String> = form
+        .tags
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    let state = Arc::new(state);
+    match ingest::create(&state, user.id, &form.target, &tag_list).await {
+        Ok(id) => {
+            state.search.refresh_vocab(user.id);
+            (
+                StatusCode::CREATED,
+                Json(serde_json::json!({ "id": id.inner() })),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            let status = StatusCode::from_u16(e.status()).unwrap_or(StatusCode::BAD_REQUEST);
+            (
+                status,
+                Json(serde_json::json!({ "error": e.user_message() })),
+            )
+                .into_response()
+        }
+    }
 }
 
 pub async fn api_bookmarks(State(state): State<AppState>, headers: HeaderMap) -> Response {

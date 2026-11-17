@@ -38,6 +38,7 @@ pub struct HitView {
     pub tags: Vec<String>,
     pub pinned: bool,
     pub has_shot: bool,
+    pub low_quality: bool,
     pub initial: String,
 }
 

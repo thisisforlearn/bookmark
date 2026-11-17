@@ -10,7 +10,7 @@ pub mod robots;
 pub mod ssrf;
 pub mod url;
 
-pub use fetch::Fetcher;
+pub use fetch::{Fetcher, download};
 pub use readability::Extracted;
 pub use url::{is_http_url, normalize, site_of, text_norm, url_norm};
 
@@ -115,6 +115,14 @@ impl CrawlError {
     }
 }
 
+/// Heuristic 0..1 quality score for an extracted page. Long pages with a high
+/// (kept / total) text ratio score well; thin, chrome-heavy pages score low.
+pub fn quality_score(text_len: usize, boilerplate_ratio: f32) -> f32 {
+    let length = (text_len as f32 / 1200.0).clamp(0.0, 1.0);
+    let density = boilerplate_ratio.clamp(0.0, 1.0);
+    (0.65 * length + 0.35 * density).clamp(0.0, 1.0)
+}
+
 /// What a fetch produced.
 #[derive(Clone, Debug)]
 pub enum FetchOutcome {
@@ -127,6 +135,13 @@ pub enum FetchOutcome {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn quality_heuristic() {
+        assert!(quality_score(4000, 1.0) > 0.9);
+        assert!(quality_score(120, 0.1) < 0.15);
+        assert!((0.0..=1.0).contains(&quality_score(0, 0.0)));
+    }
 
     #[test]
     fn retry_policy() {

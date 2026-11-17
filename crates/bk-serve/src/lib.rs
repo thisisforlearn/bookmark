@@ -6,6 +6,7 @@
 pub mod auth;
 pub mod handlers;
 pub mod ingest;
+pub mod pwa;
 pub mod security;
 pub mod views;
 
@@ -80,7 +81,10 @@ pub fn build_state(cfg: Config) -> Result<AppState> {
 pub fn router(state: AppState) -> Router {
     let api = Router::new()
         .route("/api/v1/search", get(handlers::api_search))
-        .route("/api/v1/bookmarks", get(handlers::api_bookmarks));
+        .route("/api/v1/bookmarks", get(handlers::api_bookmarks))
+        // Same-origin only: the session cookie is SameSite=Lax, so a cross-site
+        // POST cannot carry it. This is what the share target posts to.
+        .route("/api/v1/share", post(handlers::api_share));
 
     let authed = Router::new()
         .route("/", get(handlers::index))
@@ -116,6 +120,12 @@ pub fn router(state: AppState) -> Router {
         .route("/static/app.css", get(static_css))
         .route("/static/app.js", get(static_js))
         .route("/static/favicon.svg", get(static_favicon))
+        .route("/manifest.webmanifest", get(pwa::manifest))
+        .route("/sw.js", get(pwa::service_worker))
+        .route("/static/icon-192.png", get(pwa::icon_192))
+        .route("/static/icon-512.png", get(pwa::icon_512))
+        .route("/static/apple-touch-icon.png", get(pwa::apple_touch))
+        .route("/share-target", post(pwa::share_target_fallback))
         .merge(authed)
         .fallback(handlers::not_found)
         .layer(middleware::from_fn(security::csrf_middleware))

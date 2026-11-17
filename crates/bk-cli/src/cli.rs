@@ -92,6 +92,12 @@ pub enum UserCommand {
 pub enum ModelCommand {
     List,
     Verify,
+    /// Download the prebuilt default models into the models directory.
+    Install {
+        /// Base URL or local directory to copy from.
+        #[arg(long)]
+        from: Option<String>,
+    },
     /// Train a model. Only available in the `train` feature build.
     Train {
         model: String,

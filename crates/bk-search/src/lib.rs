@@ -572,12 +572,13 @@ fn features(
         domain_affinity,
         if has_shot { 1.0 } else { 0.0 },
         title_overlap,
+        b.quality.clamp(0.0, 1.0),
     ]
 }
 
 fn heuristic(f: &[f32]) -> f32 {
     // Hand-tuned weights that work well without a trained re-ranker.
-    let w = [1.0, 0.35, 0.20, 0.30, 0.25, 0.05, 0.03, 0.25];
+    let w = [1.0, 0.35, 0.20, 0.30, 0.25, 0.05, 0.03, 0.25, 0.35];
     f.iter().zip(w.iter()).map(|(a, b)| a * b).sum()
 }
 

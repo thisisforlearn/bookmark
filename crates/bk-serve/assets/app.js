@@ -138,5 +138,43 @@
     });
   }
 
+  // ---- PWA: service worker + install prompt ------------------------------
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").catch(function () {});
+    });
+  }
+
+  var deferredPrompt = null;
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    var b = document.getElementById("install-app");
+    if (b) b.hidden = false;
+    var hint = document.getElementById("install-hint");
+    if (hint) hint.textContent = "Tap install to add bookmark to your home screen.";
+  });
+  var installBtn = document.getElementById("install-app");
+  if (installBtn) {
+    installBtn.addEventListener("click", function () {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.finally(function () {
+        deferredPrompt = null;
+        installBtn.hidden = true;
+      });
+    });
+  }
+
+  // ---- share-sheet result toast ------------------------------------------
+  if (addStatus) {
+    var params = new URLSearchParams(location.search);
+    var shared = params.get("share");
+    if (shared === "saved") addStatus.textContent = "Saved from share sheet.";
+    else if (shared === "empty") addStatus.textContent = "Nothing to save — try sharing a link.";
+    else if (shared === "failed") addStatus.textContent = "Could not save the shared link.";
+    else if (shared === "saved" || shared === "open") { /* no-op */ }
+  }
+
   bindActions();
 })();

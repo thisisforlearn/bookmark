@@ -37,6 +37,7 @@
           <span class="title">{{ h.title }}</span>
           {% if h.pinned %}<span class="badge pin">pinned</span>{% endif %}
           {% if h.has_shot %}<span class="badge">screenshot</span>{% endif %}
+          {% if h.low_quality %}<span class="badge warn" title="Little extractable text">thin</span>{% endif %}
         </div>
         <div class="url">{{ h.site }}{% if !h.path.is_empty() %}<span class="path">{{ h.path }}</span>{% endif %}</div>
         <p class="snippet">{{ h.snippet|safe }}</p>

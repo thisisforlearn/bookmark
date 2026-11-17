@@ -23,6 +23,7 @@ pub use models::{EmbedModel, ModelSet, RankModel, SpellModel};
 pub struct Scratch {
     pub f32_a: Vec<f32>,
     pub f32_b: Vec<f32>,
+    pub f32_c: Vec<f32>,
     pub i32_a: Vec<i32>,
     pub i8_a: Vec<i8>,
     pub bytes: Vec<u8>,
@@ -36,6 +37,7 @@ impl Scratch {
     pub fn reset(&mut self) {
         self.f32_a.clear();
         self.f32_b.clear();
+        self.f32_c.clear();
         self.i32_a.clear();
         self.i8_a.clear();
         self.bytes.clear();
@@ -78,6 +80,38 @@ pub fn spell_features(typo: &str, cand: &str, dim: usize, out: &mut Vec<f32>) {
     let norm = out.iter().map(|v| v * v).sum::<f32>().sqrt().max(1e-6);
     for v in out.iter_mut() {
         *v /= norm;
+    }
+}
+
+/// Hashing vectorizer for a single word: whole-word + character trigrams and
+/// 4-grams, hash-projected with a sign, then L2-normalised. Both the trainer and
+/// the runtime use this, so vocabulary words and out-of-vocabulary words live in
+/// the same space.
+pub fn hash_word_unit(word: &str, dim: usize, out: &mut Vec<f32>) {
+    out.clear();
+    if dim == 0 {
+        return;
+    }
+    out.resize(dim, 0.0);
+    let project = |v: &mut Vec<f32>, s: &str, weight: f32| {
+        let h = bk_core::xxh3_str(s);
+        let idx = (h % dim as u64) as usize;
+        let sign = if (h >> 63) & 1 == 0 { 1.0 } else { -1.0 };
+        v[idx] += weight * sign;
+    };
+    project(out, word, 1.0);
+    let chars: Vec<char> = word.chars().collect();
+    for n in [3usize, 4] {
+        if chars.len() >= n {
+            for win in chars.windows(n) {
+                let s: String = win.iter().collect();
+                project(out, &s, 0.5);
+            }
+        }
+    }
+    let norm = out.iter().map(|x| x * x).sum::<f32>().sqrt().max(1e-6);
+    for x in out.iter_mut() {
+        *x /= norm;
     }
 }
 

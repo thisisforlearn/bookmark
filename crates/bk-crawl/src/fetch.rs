@@ -210,6 +210,25 @@ async fn read_capped(resp: reqwest::Response, cap: usize) -> Result<(Vec<u8>, us
     Ok((out, n))
 }
 
+/// Simple bounded GET used by `bookmark model install`. Not routed through the
+/// crawler's SSRF guard because it only ever fetches our own release URLs.
+pub async fn download(url: &str, max_bytes: usize) -> Result<Vec<u8>, crate::CrawlError> {
+    let client = reqwest::Client::builder()
+        .user_agent(USER_AGENT)
+        .timeout(Duration::from_secs(60))
+        .build()
+        .map_err(|e| CrawlError::Io(e.to_string()))?;
+    let resp = client.get(url).send().await.map_err(map_reqwest)?;
+    if !resp.status().is_success() {
+        return Err(CrawlError::Status(resp.status().as_u16()));
+    }
+    let (body, n) = read_capped(resp, max_bytes).await?;
+    if n == 0 {
+        return Err(CrawlError::Empty);
+    }
+    Ok(body)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

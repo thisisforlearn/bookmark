@@ -257,8 +257,17 @@ impl EmbedModel {
                 for (d, &q) in row.iter().enumerate() {
                     acc[d] += q as f32 * self.emb_scale;
                 }
-                count += 1;
+            } else {
+                // Out-of-vocabulary: hash the token into the same space so a
+                // small shipped model still embeds arbitrary words.
+                let mut oov = std::mem::take(&mut s.f32_c);
+                crate::hash_word_unit(&tok, self.dim, &mut oov);
+                for (d, v) in oov.iter().enumerate() {
+                    acc[d] += v;
+                }
+                s.f32_c = oov;
             }
+            count += 1;
         }
         if count > 0 {
             let inv = 1.0 / count as f32;

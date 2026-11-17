@@ -22,22 +22,9 @@ pub fn build(vocab: &[(String, u32)], dim: usize) -> EmbedWeights {
     let mut global_max = 1e-6f32;
 
     for (word, _) in vocab {
-        let mut v = vec![0.0f32; dim];
-        let chars: Vec<char> = word.chars().collect();
-        // Whole-word, trigrams and 4-grams, hash-projected with a sign.
-        add_ngram(&mut v, word, 1.0);
-        for n in [3usize, 4] {
-            if chars.len() >= n {
-                for win in chars.windows(n) {
-                    let s: String = win.iter().collect();
-                    add_ngram(&mut v, &s, 0.5);
-                }
-            }
-        }
-        let norm = v.iter().map(|x| x * x).sum::<f32>().sqrt().max(1e-6);
-        for x in v.iter_mut() {
-            *x /= norm;
-        }
+        // Same vectorizer the runtime uses for out-of-vocabulary words.
+        let mut v = Vec::with_capacity(dim);
+        bk_infer::hash_word_unit(word, dim, &mut v);
         for x in &v {
             global_max = global_max.max(x.abs());
         }
@@ -61,13 +48,6 @@ pub fn build(vocab: &[(String, u32)], dim: usize) -> EmbedWeights {
         gamma: vec![1.0; dim],
         beta: vec![0.0; dim],
     }
-}
-
-fn add_ngram(v: &mut [f32], s: &str, weight: f32) {
-    let h = bk_core::xxh3_str(s);
-    let idx = (h % v.len() as u64) as usize;
-    let sign = if (h >> 63) & 1 == 0 { 1.0 } else { -1.0 };
-    v[idx] += weight * sign;
 }
 
 #[cfg(test)]

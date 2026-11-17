@@ -98,16 +98,27 @@ AVX2/AVX-VNNI integer kernels. Having Vulkan installed does no harm, but nothing
 
 ## Training models on Windows
 
-```powershell
-# build the training-enabled binary
-cargo build --release -p bk-cli --features train
+The prebuilt Windows binary already includes the trainer.
 
-# train (seconds to a couple of minutes)
-.\target\release\bookmark.exe model train all --mode quick
-.\target\release\bookmark.exe model verify
+```powershell
+# option A: download the prebuilt models (no training)
+.\bookmark.exe model install
+
+# option B: train locally (seconds to a couple of minutes)
+.\bookmark.exe model train all --mode quick
+.\bookmark.exe model verify
 
 # restart the server so it loads them
-.\target\release\bookmark.exe serve
+.\bookmark.exe serve
+```
+
+To train in the background while you keep working:
+
+```powershell
+Start-Process -WindowStyle Hidden -FilePath .\bookmark.exe -ArgumentList "model","train","all","--mode","full"
+# or, to watch it:
+Start-Job { .\bookmark.exe model train all --mode full }
+Get-Job | Receive-Job -Wait
 ```
 
 Models are written to `%USERPROFILE%\.local\share\bookmark\models\`. Once present, the

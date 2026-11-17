@@ -68,6 +68,7 @@ pub async fn run(command: ModelCommand) -> i32 {
             }
             if ok { 0 } else { 1 }
         }
+        ModelCommand::Install { from } => install_models(&cfg, from.as_deref()).await,
         ModelCommand::Train {
             model,
             backend,
@@ -85,22 +86,85 @@ pub async fn run(command: ModelCommand) -> i32 {
     }
 }
 
-#[cfg(feature = "train")]
 fn train(model: &str, backend: &str, mode: &str) -> i32 {
     bk_train::cli::train(model, backend, mode)
 }
 
-#[cfg(not(feature = "train"))]
-fn train(model: &str, backend: &str, mode: &str) -> i32 {
-    let _ = (model, backend, mode);
-    eprintln!("This build has no training support.");
-    eprintln!();
-    eprintln!("Training requires the Burn backend, which is only compiled on the Windows");
-    eprintln!("training binary. To enable it, build with:");
-    eprintln!();
-    eprintln!("  cargo build -p bk-cli --features train");
-    eprintln!();
-    eprintln!("Then run:");
-    eprintln!("  bookmark model train spell --backend wgpu --mode full");
-    2
+const MODELS: [&str; 3] = ["spell.bkmdl", "embed.bkmdl", "rank.bkmdl"];
+
+/// Download (or copy) the prebuilt default models. Never fails hard: each file
+/// that can't be fetched is reported and skipped.
+async fn install_models(cfg: &bk_core::Config, from: Option<&str>) -> i32 {
+    if let Err(e) = std::fs::create_dir_all(&cfg.models_dir) {
+        eprintln!("error: cannot create {}: {e}", cfg.models_dir.display());
+        return 1;
+    }
+
+    // Local directory?
+    if let Some(src) = from {
+        let p = std::path::Path::new(src);
+        if p.is_dir() {
+            let mut ok = 0;
+            for name in MODELS {
+                let file = p.join(name);
+                if file.exists() {
+                    match std::fs::copy(&file, cfg.models_dir.join(name)) {
+                        Ok(_) => {
+                            println!("installed {name}");
+                            ok += 1;
+                        }
+                        Err(e) => eprintln!("could not copy {name}: {e}"),
+                    }
+                } else {
+                    eprintln!("missing {name} in {}", p.display());
+                }
+            }
+            return finish(ok);
+        }
+    }
+
+    let base = from
+        .map(|s| s.trim_end_matches('/').to_string())
+        .unwrap_or_else(|| {
+            "https://github.com/thisisforlearn/bookmark/releases/latest/download".to_string()
+        });
+
+    println!("downloading models from {base}");
+    let mut ok = 0;
+    for name in MODELS {
+        let url = format!("{base}/{name}");
+        match bk_crawl::download(&url, 64 * 1024 * 1024).await {
+            Ok(bytes) => {
+                let arc: std::sync::Arc<[u8]> = bytes.clone().into();
+                if let Err(e) = bk_model::ModelFile::from_arc(arc) {
+                    eprintln!("{name} is invalid, skipping: {e}");
+                    continue;
+                }
+                match std::fs::write(cfg.models_dir.join(name), &bytes) {
+                    Ok(_) => {
+                        println!(
+                            "installed {name} ({})",
+                            common::human_bytes(bytes.len() as u64)
+                        );
+                        ok += 1;
+                    }
+                    Err(e) => eprintln!("could not write {name}: {e}"),
+                }
+            }
+            Err(e) => eprintln!("could not fetch {name}: {e}"),
+        }
+    }
+    finish(ok)
+}
+
+fn finish(ok: usize) -> i32 {
+    if ok == 0 {
+        eprintln!();
+        eprintln!("Nothing installed. You can also build the models locally:");
+        eprintln!("    bookmark model train all --mode quick");
+        return 1;
+    }
+    println!();
+    println!("{ok} model(s) installed. Restart the server to load them.");
+    0
 }

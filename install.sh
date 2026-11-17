@@ -11,6 +11,7 @@
 #   --yes            non-interactive, no prompts
 #   --uninstall      remove the binary and (optionally) data
 #   --version VER    install a specific release tag
+#   --no-models      skip downloading the default search models
 set -euo pipefail
 
 REPO="thisisforlearn/bookmark"
@@ -18,12 +19,14 @@ VERSION="latest"
 DEV=0
 ASSUME_YES=0
 UNINSTALL=0
+NO_MODELS=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --dev) DEV=1 ;;
     --yes|-y) ASSUME_YES=1 ;;
     --uninstall) UNINSTALL=1 ;;
+    --no-models) NO_MODELS=1 ;;
     --version) shift; VERSION="${1:-latest}" ;;
     -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
@@ -132,6 +135,18 @@ if [ ! -f "$STATE_DIR/bookmark.db" ]; then
   BOOKMARK_CONFIG="${BOOKMARK_CONFIG:-$HOME/.config/bookmark/config.toml}" "$BIN_PATH" init || warn "init failed; run it manually"
 else
   say "existing data found at $STATE_DIR"
+fi
+
+# --- default models ----------------------------------------------------------
+if [ "$NO_MODELS" = 0 ] && [ "$DEV" = 0 ]; then
+  mkdir -p "$STATE_DIR/models"
+  for m in spell embed rank; do
+    if curl -fsSL "$BASE/$m.bkmdl" -o "$STATE_DIR/models/$m.bkmdl" 2>/dev/null; then
+      say "model: $m"
+    else
+      rm -f "$STATE_DIR/models/$m.bkmdl"
+    fi
+  done
 fi
 
 # --- Termux niceties ---------------------------------------------------------

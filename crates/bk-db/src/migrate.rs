@@ -1,42 +1,54 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Vaibhav
 
-//! Forward-only migrations. The schema lives in `migrations/000N_*.sql` and is
-//! embedded at compile time. `apply()` is idempotent: it bumps the SQLite
-//! `user_version` to the latest migration number and only runs new files.
+//! Forward-only migrations. Each entry is `(version, sql)`; `apply` runs any
+//! migration newer than the database's `user_version`, in order.
 
 use rusqlite::Connection;
 
 use bk_core::Result;
 
-const CURRENT_VERSION: i64 = 1;
+const MIGRATIONS: &[(i64, &str)] = &[
+    (1, include_str!("../../../migrations/0001_init.sql")),
+    (2, include_str!("../../../migrations/0002_quality.sql")),
+];
+
+pub fn current_version() -> i64 {
+    MIGRATIONS.last().map(|(v, _)| *v).unwrap_or(0)
+}
 
 /// Apply any pending migrations. Idempotent.
 pub fn apply(conn: &mut Connection) -> Result<()> {
-    let current: i64 = conn.pragma_query_value(None, "user_version", |r| r.get(0))?;
-    if current >= CURRENT_VERSION {
-        return Ok(());
+    let mut version: i64 = conn.pragma_query_value(None, "user_version", |r| r.get(0))?;
+    for (v, sql) in MIGRATIONS {
+        if *v <= version {
+            continue;
+        }
+        let tx = conn.transaction()?;
+        tx.execute_batch(sql)?;
+        tx.pragma_update(None, "user_version", *v)?;
+        tx.commit()?;
+        version = *v;
     }
-    let tx = conn.transaction()?;
-    tx.execute_batch(include_str!("../../../migrations/0001_init.sql"))?;
-    tx.pragma_update(None, "user_version", CURRENT_VERSION)?;
-    tx.commit()?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rusqlite::Connection;
 
     #[test]
-    fn idempotent() {
+    fn idempotent_and_ordered() {
         let mut conn = Connection::open_in_memory().unwrap();
         apply(&mut conn).unwrap();
         apply(&mut conn).unwrap();
         let v: i64 = conn
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .unwrap();
-        assert_eq!(v, CURRENT_VERSION);
+        assert_eq!(v, current_version());
+        // Column from migration 2 must exist.
+        let _: f64 = conn
+            .query_row("SELECT quality FROM bookmarks LIMIT 1", [], |r| r.get(0))
+            .unwrap_or(1.0);
     }
 }

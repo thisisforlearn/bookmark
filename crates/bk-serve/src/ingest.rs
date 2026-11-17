@@ -98,10 +98,20 @@ pub async fn crawl_bookmark(state: &Arc<AppState>, id: Id, url: &str) {
             let site = a.site.clone();
             let lang = a.lang.clone();
             let desc = a.description.clone();
+            let quality = bk_crawl::quality_score(text.len(), a.boilerplate_ratio);
             let _ = state
                 .db
                 .exec(move |tx| {
-                    bookmarks::apply_crawl(tx, id, &title, &desc, &text, lang.as_deref(), &site)?;
+                    bookmarks::apply_crawl(
+                        tx,
+                        id,
+                        &title,
+                        &desc,
+                        &text,
+                        lang.as_deref(),
+                        &site,
+                        quality,
+                    )?;
                     crawls::record(tx, id, Some(200), None, text.len() as i64, 0)?;
                     Ok(())
                 })

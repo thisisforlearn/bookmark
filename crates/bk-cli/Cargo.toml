@@ -20,7 +20,7 @@ bk-serve = { workspace = true }
 bk-ops = { workspace = true }
 bk-model = { workspace = true }
 bk-infer = { workspace = true }
-bk-train = { workspace = true, optional = true }
+bk-train = { workspace = true }
 
 clap = { workspace = true }
 axum = { workspace = true }
@@ -37,7 +37,8 @@ getrandom = { workspace = true }
 
 [features]
 default = []
-train = ["dep:bk-train"]
+# Kept as a no-op so `--features train` from older docs/CI still works.
+train = []
 
 [[bin]]
 name = "bookmark"

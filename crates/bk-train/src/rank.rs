@@ -16,8 +16,8 @@ pub struct RankWeights {
 
 /// Weights that reproduce `bk_search`'s heuristic scoring.
 pub fn heuristic() -> RankWeights {
-    let in_dim = 8usize;
-    let hidden = 8usize;
+    let in_dim = 9usize;
+    let hidden = 9usize;
     // Identity projection so each hidden unit sees one feature.
     let mut w1 = vec![0.0f32; hidden * in_dim];
     for j in 0..hidden {
@@ -25,7 +25,7 @@ pub fn heuristic() -> RankWeights {
     }
     let b1 = vec![0.0f32; hidden];
     // Same weights as `bk_search::heuristic`.
-    let w2 = vec![1.0, 0.35, 0.20, 0.30, 0.25, 0.05, 0.03, 0.25];
+    let w2 = vec![1.0, 0.35, 0.20, 0.30, 0.25, 0.05, 0.03, 0.25, 0.35];
     let b2 = -0.40;
     RankWeights {
         in_dim,
