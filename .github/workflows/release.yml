@@ -19,15 +19,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
         with:
-          targets: ${{ matrix.target }}
+          tool: cross
       - uses: Swatinem/rust-cache@v2
         with:
-          key: ${{ matrix.target }}
-      - name: Install musl tools
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
+          key: cross-${{ matrix.target }}
+      # `cross` runs the build inside a container that already has a musl
+      # toolchain for the target, including aws-lc-sys and zstd-sys.
       - name: Build
-        run: cargo build --release -p bk-cli --target ${{ matrix.target }}
+        run: cross build --release -p bk-cli --target ${{ matrix.target }}
       - name: Package
         run: |
           cp "target/${{ matrix.target }}/release/bookmark" "bookmark-${{ matrix.target }}"
