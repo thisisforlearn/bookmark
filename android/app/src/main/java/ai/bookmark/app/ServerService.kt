@@ -119,6 +119,21 @@ class ServerService : Service() {
                 prefs.adminPassword = pw
                 exec(exe, listOf("init"), cfg, pw, wait = true)
             }
+
+            // Zero-setup: mint a device token for this app so the user never
+            // types an address or a pairing code.
+            if (prefs.token.isEmpty()) {
+                val out = execCapture(exe, listOf("device", "add", "app"), cfg)
+                val token = out.lineSequence().map { it.trim() }.lastOrNull { it.isNotBlank() }
+                if (!token.isNullOrBlank()) {
+                    prefs.host = "http://127.0.0.1:8080"
+                    prefs.token = token
+                    prefs.user = "local"
+                } else {
+                    ServerState.append("could not create a device token")
+                }
+            }
+
             exec(exe, listOf("serve", "--host", "127.0.0.1", "--port", "8080"), cfg, null, wait = true)
         } catch (e: Exception) {
             ServerState.append("error: ${e.message}")
@@ -140,6 +155,22 @@ class ServerService : Service() {
             p.inputStream.bufferedReader().forEachLine { ServerState.append(it) }
         }, "bookmark-log").start()
         if (wait) p.waitFor()
+    }
+
+    /** Run a command and return its stdout (stderr is discarded). */
+    private fun execCapture(exe: File, args: List<String>, cfg: File): String {
+        return try {
+            val pb = ProcessBuilder(listOf(exe.absolutePath) + args)
+            pb.environment()["HOME"] = filesDir.absolutePath
+            pb.environment()["BOOKMARK_CONFIG"] = cfg.absolutePath
+            val p = pb.start()
+            val out = p.inputStream.bufferedReader().readText()
+            p.waitFor()
+            out
+        } catch (e: Exception) {
+            ServerState.append("exec failed: ${e.message}")
+            ""
+        }
     }
 
     private fun randomPassword(): String {

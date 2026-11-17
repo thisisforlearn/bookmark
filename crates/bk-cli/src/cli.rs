@@ -64,6 +64,11 @@ pub enum Command {
         #[command(subcommand)]
         command: ModelCommand,
     },
+    /// Device tokens for the Android app.
+    Device {
+        #[command(subcommand)]
+        command: DeviceCommand,
+    },
     /// Diagnose the install.
     Doctor,
     /// Service management (systemd / termux / windows).
@@ -109,6 +114,18 @@ pub enum ModelCommand {
     /// Export a trained model to .bkmdl.
     Export {
         out: String,
+    },
+}
+
+#[derive(clap::Subcommand)]
+pub enum DeviceCommand {
+    /// Create a token and print it (used by the Android app on first run).
+    Add {
+        name: String,
+    },
+    List,
+    Revoke {
+        id: i64,
     },
 }
 

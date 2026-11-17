@@ -12,7 +12,7 @@
 #   --uninstall      remove the binary and (optionally) data
 #   --version VER    install a specific release tag
 #   --no-models      skip downloading the default search models
-set -euo pipefail
+set -eu
 
 REPO="thisisforlearn/bookmark"
 VERSION="latest"

@@ -36,6 +36,7 @@ async fn dispatch(cmd: Command) -> i32 {
         Command::Import { input } => bk_cli::cmd::import::run(&input).await,
         Command::Backup { out } => bk_cli::cmd::backup::run(out.as_deref()).await,
         Command::Model { command } => bk_cli::cmd::model::run(command).await,
+        Command::Device { command } => bk_cli::cmd::device::run(command).await,
         Command::Doctor => bk_cli::cmd::doctor::run().await,
         Command::Service { command } => bk_cli::cmd::service::run(command).await,
         Command::Update => bk_cli::cmd::update::run().await,

@@ -4,8 +4,8 @@ Two APKs are built by `.github/workflows/android.yml` and attached to releases.
 
 | APK | Size | What it does |
 |---|---|---|
-| `bookmark-consumer.apk` | ~3 MB | GUI for a server on your LAN/Tailscale. Share-to-save. |
-| `bookmark-nerd.apk` | ~13 MB | Same, plus the server itself runs on the phone |
+| `bookmark-consumer.apk` | ~7 MB | **Zero setup.** Runs the library on the phone. No address, no password. |
+| `bookmark-nerd.apk` | ~7 MB | Connects to a server you run (Termux, a Pi, a laptop) and can also serve locally |
 
 The PWA remains the zero-install option; the APK exists for the Share menu and for
 running everything on-device.
@@ -19,13 +19,28 @@ unknown developer — that is expected for sideloaded APKs.
 The APKs are signed with a debug keystore, which is fine for personal use but not accepted by
 stores.
 
-## Connect the phone
+## Consumer app: nothing to set up
+
+Install it and open it. On first launch it starts its own local library, creates a device
+token for itself, and goes straight to the Library screen. Everything is stored in the app's
+private files directory — no account, no address, no pairing code.
+
+The first launch takes a second or two; you'll see "Setting up your library…".
+
+## Nerd app: connect to your server
 
 1. On the server, open **Settings → Connect a phone**.
 2. The page shows the server address and an 8-character code (valid 10 minutes, single use).
 3. In the app, enter the address and the code, tap **Connect**.
 
 The app stores a device token; no password is typed and no cookie is shared.
+
+From the server's shell you can also mint a token directly:
+
+```sh
+bookmark device add phone    # prints a token, nothing else
+bookmark device list
+```
 
 ## Saving things
 
@@ -40,9 +55,15 @@ The app stores a device token; no password is typed and no cookie is shared.
 
 All of these land in the library immediately and appear in web search.
 
+## Backup and restore
+
+Settings → **Back up** writes a zip of the whole library (database + models) wherever you
+choose — Files, Drive, a USB stick. **Restore** reads one back; the library restarts
+automatically. Both use Android's own file picker, so no storage permission is needed.
+
 ## Nerd mode
 
-`bookmark-nerd.apk` ships the `aarch64-linux-android` server binary and the three models.
+Both APKs ship the `aarch64-linux-android` server binary and the three models.
 
 1. Open the app → **Settings → On-device server → Start**.
 2. A notification appears; the server listens on `127.0.0.1:8080` only.

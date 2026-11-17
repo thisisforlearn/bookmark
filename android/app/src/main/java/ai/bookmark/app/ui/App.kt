@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
+import ai.bookmark.app.Backup
 import ai.bookmark.app.BkApi
 import ai.bookmark.app.BuildConfig
 import ai.bookmark.app.Prefs
@@ -65,6 +66,7 @@ import ai.bookmark.app.ServerService
 import ai.bookmark.app.ServerState
 import ai.bookmark.app.Session
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -77,17 +79,15 @@ private enum class Tab(val label: String, val icon: ImageVector) {
 
 @Composable
 fun BkApp(prefs: Prefs) {
+    val context = LocalContext.current
     var session by remember { mutableStateOf(prefs.session()) }
+    val consumer = BuildConfig.FLAVOR == "consumer"
+
     BkTheme {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             val current = session
-            if (current == null) {
-                Onboarding { s ->
-                    prefs.save(s)
-                    session = s
-                }
-            } else {
-                Home(
+            when {
+                current != null -> Home(
                     session = current,
                     prefs = prefs,
                     onSignOut = {
@@ -95,7 +95,54 @@ fun BkApp(prefs: Prefs) {
                         session = null
                     },
                 )
+                // Consumer build: no server address, no pairing code. Start the
+                // embedded server and wait for it to provision a token.
+                consumer -> {
+                    LaunchedEffect(Unit) {
+                        ServerService.start(context)
+                        repeat(180) {
+                            delay(500)
+                            val s = prefs.session()
+                            if (s != null) {
+                                session = s
+                                return@LaunchedEffect
+                            }
+                        }
+                    }
+                    StartingScreen(ServerState.log.toString())
+                }
+                else -> Onboarding { s ->
+                    prefs.save(s)
+                    session = s
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun StartingScreen(log: String) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("◆ bookmark", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+        CircularProgressIndicator()
+        Text("Setting up your library…", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            "Everything stays on this phone.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (log.isNotBlank()) {
+            Text(
+                log.takeLast(400),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 6,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -486,17 +533,67 @@ private fun CaptureScreen(session: Session) {
 @Composable
 private fun SettingsScreen(session: Session, prefs: Prefs, onSignOut: () -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var running by remember { mutableStateOf(ServerState.running) }
+    var message by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    val consumer = BuildConfig.FLAVOR == "consumer"
+
+    val createZip = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        busy = true
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { Backup.zip(context.filesDir, it) }
+                }.isSuccess
+            }
+            message = if (ok) "Backup saved" else "Could not write the backup"
+            busy = false
+        }
+    }
+
+    val openZip = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        busy = true
+        scope.launch {
+            ServerService.stop(context)
+            delay(700)
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openInputStream(uri)?.use { Backup.unzip(context.filesDir, it) }
+                }.isSuccess
+            }
+            ServerService.start(context)
+            message = if (ok) "Restored — restarting the library" else "Could not read that backup"
+            busy = false
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("Settings", style = MaterialTheme.typography.titleLarge)
-        InfoRow("Server", session.host)
-        InfoRow("Signed in as", session.user)
+        InfoRow(if (consumer) "Library" else "Server", if (consumer) "On this phone" else session.host)
+        if (!consumer) InfoRow("Signed in as", session.user)
 
-        if (BuildConfig.FLAVOR == "nerd") {
+        Text("Backup", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Save a zip of your whole library, or restore one.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { createZip.launch("bookmark-backup.zip") }, enabled = !busy) {
+                Text("Back up")
+            }
+            Button(onClick = { openZip.launch(arrayOf("application/zip")) }, enabled = !busy) {
+                Text("Restore")
+            }
+        }
+
+        if (!consumer) {
             Text("On-device server", style = MaterialTheme.typography.titleMedium)
             Text(
                 if (running) "Running at http://127.0.0.1:8080" else "Stopped",
@@ -531,9 +628,11 @@ private fun SettingsScreen(session: Session, prefs: Prefs, onSignOut: () -> Unit
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Button(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) { Text("Sign out") }
         }
 
-        Button(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) { Text("Sign out") }
+        if (busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        message?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Vaibhav
+#
+# Force LF everywhere. Windows runners check out with core.autocrlf=true,
+# which turned install.sh into CRLF and broke `curl | bash` on Termux.
+* text=auto eol=lf
+*.sh text eol=lf
+*.png binary
+*.bkmdl binary

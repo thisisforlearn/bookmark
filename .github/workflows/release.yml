@@ -41,7 +41,9 @@ jobs:
           path: bookmark-${{ matrix.target }}*
       - uses: softprops/action-gh-release@v2
         with:
-          files: bookmark-${{ matrix.target }}*
+          files: |
+            bookmark-${{ matrix.target }}*
+            install.sh
           generate_release_notes: true
 
   android:

@@ -7,6 +7,7 @@ pub mod add;
 pub mod backup;
 pub mod common;
 pub mod crawl;
+pub mod device;
 pub mod doctor;
 pub mod export;
 pub mod import;

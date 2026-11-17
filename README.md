@@ -135,8 +135,8 @@ If you want a real app icon and the Android Share sheet, releases also include t
 
 | APK | Size | Use |
 |---|---|---|
-| `bookmark-consumer.apk` | ~3 MB | Talks to a server on your LAN or Tailscale |
-| `bookmark-nerd.apk` | ~13 MB | Same, plus the server runs **on the phone** |
+| `bookmark-consumer.apk` | ~7 MB | **Zero setup** — the library runs on the phone |
+| `bookmark-nerd.apk` | ~7 MB | Connects to a server you run, or serves locally |
 
 Download from the [releases page](https://github.com/thisisforlearn/bookmark/releases), then
 pair it with your server via **Settings → Connect a phone**. Full details in
