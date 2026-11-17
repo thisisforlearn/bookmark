@@ -3,11 +3,14 @@
 
 //! The HTTP server: application state, router and static assets.
 
+pub mod api_app;
 pub mod auth;
 pub mod handlers;
 pub mod ingest;
+pub mod media;
 pub mod pwa;
 pub mod security;
+pub mod tokens;
 pub mod views;
 
 use std::sync::Arc;
@@ -84,7 +87,13 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/bookmarks", get(handlers::api_bookmarks))
         // Same-origin only: the session cookie is SameSite=Lax, so a cross-site
         // POST cannot carry it. This is what the share target posts to.
-        .route("/api/v1/share", post(handlers::api_share));
+        .route("/api/v1/share", post(handlers::api_share))
+        // Android app surface.
+        .route("/api/v1/pair", post(api_app::pair))
+        .route("/api/v1/save", post(api_app::save))
+        .route("/api/v1/whoami", get(api_app::whoami))
+        .route("/api/v1/models", get(api_app::models))
+        .route("/api/v1/models/{name}", get(api_app::model_file));
 
     let authed = Router::new()
         .route("/", get(handlers::index))
@@ -102,6 +111,7 @@ pub fn router(state: AppState) -> Router {
         .route("/shares/{id}/revoke", post(handlers::revoke_share))
         .route("/settings", get(handlers::settings))
         .route("/settings/password", post(handlers::change_password))
+        .route("/settings/pair", get(api_app::pair_page))
         .merge(api);
 
     Router::new()

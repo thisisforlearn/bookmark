@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#4f46e5">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<title>Connect a phone · bookmark</title>
+</head>
+<body class="centered">
+<main class="auth-card wide">
+  <div class="brand big"><span class="mark" aria-hidden="true">◆</span> bookmark</div>
+  <h1>Connect a phone</h1>
+  <p class="muted">Open the bookmark app on your phone and enter these two values.</p>
+
+  <div class="pair-box">
+    <div class="pair-row">
+      <span class="pair-label">Server</span>
+      <code class="pair-value" id="host">{{ host }}</code>
+    </div>
+    <div class="pair-row">
+      <span class="pair-label">Code</span>
+      <code class="pair-value big-code" id="code">{{ code }}</code>
+    </div>
+  </div>
+
+  <p class="muted small">The code is single-use and expires in 10 minutes.</p>
+
+  <ol class="steps">
+    <li>Install the APK from the release page.</li>
+    <li>Choose <strong>Connect to a server</strong>.</li>
+    <li>Type the server address, then the 8-character code.</li>
+  </ol>
+
+  <div class="row tight">
+    <a class="btn" href="/settings">← Back to settings</a>
+    <form method="post" action="/logout" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn ghost sm" type="submit">Sign out</button>
+    </form>
+  </div>
+  <p class="muted small">Signed in as {{ username }}</p>
+</main>
+</body>
+</html>

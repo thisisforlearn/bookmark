@@ -766,7 +766,7 @@ pub async fn api_search(
     headers: HeaderMap,
     Query(q): Query<ApiSearchQuery>,
 ) -> Response {
-    let user = match auth::current_user(&state, &headers) {
+    let user = match crate::tokens::any_user(&state, &headers) {
         Some(u) => u,
         None => return unauthorized_json(),
     };
@@ -817,7 +817,7 @@ pub async fn api_share(
     headers: HeaderMap,
     Form(form): Form<ShareForm>,
 ) -> Response {
-    let user = match auth::current_user(&state, &headers) {
+    let user = match crate::tokens::any_user(&state, &headers) {
         Some(u) => u,
         None => return unauthorized_json(),
     };
@@ -849,7 +849,7 @@ pub async fn api_share(
 }
 
 pub async fn api_bookmarks(State(state): State<AppState>, headers: HeaderMap) -> Response {
-    let user = match auth::current_user(&state, &headers) {
+    let user = match crate::tokens::any_user(&state, &headers) {
         Some(u) => u,
         None => return unauthorized_json(),
     };

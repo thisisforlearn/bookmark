@@ -11,6 +11,7 @@ use bk_core::Result;
 const MIGRATIONS: &[(i64, &str)] = &[
     (1, include_str!("../../../migrations/0001_init.sql")),
     (2, include_str!("../../../migrations/0002_quality.sql")),
+    (3, include_str!("../../../migrations/0003_devices.sql")),
 ];
 
 pub fn current_version() -> i64 {
@@ -46,9 +47,12 @@ mod tests {
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .unwrap();
         assert_eq!(v, current_version());
-        // Column from migration 2 must exist.
         let _: f64 = conn
             .query_row("SELECT quality FROM bookmarks LIMIT 1", [], |r| r.get(0))
             .unwrap_or(1.0);
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) FROM devices", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(n, 0);
     }
 }

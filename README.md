@@ -129,6 +129,19 @@ The same app works against a server on your LAN, over Tailscale, or at
 | **All-in-one** | Most people | Run bookmark on a laptop/Pi, install the PWA on your phone, point it at the LAN/Tailscale URL. Models come from the installer. |
 | **Nerd mode** | You | Run bookmark *on the phone* in Termux (`bookmark serve`), models included, then install the PWA from `http://127.0.0.1:8080`. Nothing leaves the device. |
 
+### Native APK
+
+If you want a real app icon and the Android Share sheet, releases also include two APKs:
+
+| APK | Size | Use |
+|---|---|---|
+| `bookmark-consumer.apk` | ~3 MB | Talks to a server on your LAN or Tailscale |
+| `bookmark-nerd.apk` | ~13 MB | Same, plus the server runs **on the phone** |
+
+Download from the [releases page](https://github.com/thisisforlearn/bookmark/releases), then
+pair it with your server via **Settings → Connect a phone**. Full details in
+[docs/ANDROID.md](docs/ANDROID.md).
+
 ---
 
 ## Termux (Android)
