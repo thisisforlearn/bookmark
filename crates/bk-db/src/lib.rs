@@ -52,6 +52,8 @@ impl Db {
         let path = path.to_path_buf();
         let mut conn = Self::open_conn(&path)?;
         migrate::apply(&mut conn)?;
+        // Let SQLite refresh its query-planner statistics after migrations.
+        let _ = conn.execute_batch("PRAGMA optimize;");
         let writer = writer::Writer::new(conn)?;
         Ok(Self {
             inner: Arc::new(DbInner {
@@ -64,14 +66,21 @@ impl Db {
 
     fn open_conn(path: &Path) -> Result<Connection> {
         let conn = Connection::open(path)?;
-        conn.execute_batch(
+        // Smaller page cache and mmap window on Android/Termux, where RAM is
+        // scarce and the OS kills processes aggressively.
+        let android = bk_core::config::is_android();
+        let cache_kb = if android { -16000 } else { -32000 };
+        let mmap = if android { 67_108_864 } else { 268_435_456 };
+        conn.execute_batch(&format!(
             "PRAGMA journal_mode=WAL;
              PRAGMA synchronous=NORMAL;
              PRAGMA busy_timeout=5000;
              PRAGMA foreign_keys=ON;
-             PRAGMA mmap_size=268435456;
-             PRAGMA cache_size=-32000;",
-        )?;
+             PRAGMA temp_store=MEMORY;
+             PRAGMA journal_size_limit=67108864;
+             PRAGMA mmap_size={mmap};
+             PRAGMA cache_size={cache_kb};"
+        ))?;
         Ok(conn)
     }
 

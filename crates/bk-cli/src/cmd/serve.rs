@@ -20,6 +20,20 @@ pub async fn run(host: String, port: u16) -> i32 {
             return 1;
         }
     };
+    // A server with no accounts is a dead end: nobody can sign in and the
+    // login page has nothing to authenticate against.
+    if state.db.user_count() == 0 {
+        eprintln!("error: no accounts exist yet — the server would have nothing to sign in to.");
+        eprintln!();
+        eprintln!("  data dir: {}", state.cfg.data_dir.display());
+        eprintln!();
+        eprintln!("Run this first:");
+        eprintln!("    bookmark init");
+        eprintln!();
+        eprintln!("It creates the database and prints an admin password once.");
+        return 1;
+    }
+
     let addr = format!("{}:{}", state.cfg.host, state.cfg.port);
 
     let listener = match tokio::net::TcpListener::bind(&addr).await {

@@ -63,8 +63,28 @@ Phones change IPs. Two options:
 The database lives at `~/.bookmark/bookmark.db` (Termux home). For large libraries, check free
 space with `bookmark doctor`. Backups are written beside the database.
 
+## Why the installer picks an Android build
+
+Android has no `/etc/resolv.conf`, and Android's DNS is resolved through the `netd`
+daemon via Bionic libc. A **static musl** binary carries musl's own resolver, which
+reads `/etc/resolv.conf` — so on Termux it can serve the UI and search perfectly but
+**cannot resolve hostnames to crawl them**.
+
+The installer therefore downloads `bookmark-aarch64-linux-android` on Termux, which is
+linked against Bionic and resolves DNS exactly like `curl` and `pkg` do. The musl build
+is still published for Alpine and other glibc-free Linux systems.
+
+You can confirm which build you have:
+
+```sh
+bookmark doctor        # "SIMD kernels" and "version" lines
+ldd "$(command -v bookmark)"   # musl build prints "not a dynamic executable"
+```
+
 ## Notes
 
+- The Android build is smaller and faster to start than the musl one because it uses
+  Bionic's allocator and dynamic libc.
 - `rustup` does not support `aarch64-linux-android` as a host, so building on-device requires
   `pkg install rust`. The prebuilt binary avoids that entirely.
 - Cross-compiling locally needs an NDK or musl toolchain; CI builds these targets.

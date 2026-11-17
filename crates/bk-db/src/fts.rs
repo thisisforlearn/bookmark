@@ -33,10 +33,12 @@ pub fn match_fts(
     if expr.trim().is_empty() {
         return Ok(Vec::new());
     }
+    // `ORDER BY rank` uses the table's configured ranking (title-weighted
+    // bm25) and is faster than calling bm25() in the ORDER BY clause.
     let sql = "SELECT b.id, bm25(bookmark_fts) AS score
                FROM bookmark_fts JOIN bookmarks b ON b.id = bookmark_fts.rowid
                WHERE bookmark_fts MATCH ? AND b.user_id = ?
-               ORDER BY score LIMIT ?";
+               ORDER BY rank LIMIT ?";
     let mut stmt = conn.prepare(sql)?;
     let rows = stmt.query_map(
         rusqlite::params![expr, user_id.inner(), limit as i64],
@@ -59,7 +61,7 @@ pub fn match_trigram(
     let sql = "SELECT b.id, bm25(fts_tri) AS score
                FROM fts_tri JOIN bookmarks b ON b.id = fts_tri.rowid
                WHERE fts_tri MATCH ? AND b.user_id = ?
-               ORDER BY score LIMIT ?";
+               ORDER BY rank LIMIT ?";
     let mut stmt = conn.prepare(sql)?;
     let rows = stmt.query_map(
         rusqlite::params![expr, user_id.inner(), limit as i64],

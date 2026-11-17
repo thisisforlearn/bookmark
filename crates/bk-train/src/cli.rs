@@ -20,10 +20,7 @@ fn config_path() -> PathBuf {
     if let Ok(p) = std::env::var("BOOKMARK_CONFIG") {
         return PathBuf::from(p);
     }
-    if let Ok(home) = std::env::var("HOME") {
-        return PathBuf::from(home).join(".config/bookmark/config.toml");
-    }
-    PathBuf::from("/etc/bookmark/config.toml")
+    bk_core::config::default_config_path()
 }
 
 fn bar(n: u64, label: &str) -> ProgressBar {

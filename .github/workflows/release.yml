@@ -14,7 +14,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [x86_64-unknown-linux-musl, aarch64-unknown-linux-musl]
+        target:
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
+          # Bionic build: Android has no /etc/resolv.conf, so a static musl
+          # binary cannot resolve DNS there. Termux users should use this one.
+          - aarch64-linux-android
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

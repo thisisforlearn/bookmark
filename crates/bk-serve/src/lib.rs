@@ -44,6 +44,9 @@ pub struct AppState {
 
 /// Build the state from config: open the DB, load models, wire search + crawler.
 pub fn build_state(cfg: Config) -> Result<AppState> {
+    // Make sure the data directory exists so a first run produces a clear
+    // "no accounts yet" message instead of a SQLite open error.
+    bk_core::state_dir(&cfg.data_dir)?;
     let db = Db::open(&cfg.db_path())?;
     let models = Arc::new(ModelSet::load(&cfg.models_dir));
     let search_cfg = SearchConfig {

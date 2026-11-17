@@ -107,17 +107,60 @@ impl Config {
     }
 }
 
-fn default_data_dir() -> PathBuf {
-    if let Ok(home) = std::env::var("HOME") {
-        // On Android/Termux `$HOME` is `/data/data/com.termux/files/home`; on
-        // desktop Linux it's `~/.local/share/bookmark`.
-        let p = PathBuf::from(&home);
-        if p.starts_with("/data/data") {
-            return p.join(".bookmark");
+/// Default data directory, per platform.
+///
+/// - Windows: `%LOCALAPPDATA%\\bookmark`
+/// - Termux: `$HOME/.bookmark`
+/// - Linux/macOS: `$HOME/.local/share/bookmark`
+pub fn default_data_dir() -> PathBuf {
+    #[cfg(windows)]
+    {
+        if let Ok(local) = std::env::var("LOCALAPPDATA") {
+            return PathBuf::from(local).join("bookmark");
         }
-        return PathBuf::from(home).join(".local/share/bookmark");
+        if let Ok(profile) = std::env::var("USERPROFILE") {
+            return PathBuf::from(profile).join(".bookmark");
+        }
+        return PathBuf::from("bookmark-data");
     }
-    PathBuf::from("/var/lib/bookmark")
+    #[cfg(not(windows))]
+    {
+        if let Ok(home) = std::env::var("HOME") {
+            let p = PathBuf::from(&home);
+            // Termux/Android
+            if p.starts_with("/data/data") {
+                return p.join(".bookmark");
+            }
+            return p.join(".local/share/bookmark");
+        }
+        PathBuf::from("/var/lib/bookmark")
+    }
+}
+
+/// Default config file location, per platform.
+pub fn default_config_path() -> PathBuf {
+    #[cfg(windows)]
+    {
+        if let Ok(appdata) = std::env::var("APPDATA") {
+            return PathBuf::from(appdata).join("bookmark").join("config.toml");
+        }
+    }
+    if let Ok(home) = std::env::var("HOME") {
+        return PathBuf::from(home).join(".config/bookmark/config.toml");
+    }
+    PathBuf::from("/etc/bookmark/config.toml")
+}
+
+/// True when running under Termux/Android.
+pub fn is_termux() -> bool {
+    std::env::var("PREFIX")
+        .map(|p| p.contains("com.termux"))
+        .unwrap_or(false)
+}
+
+/// True when running on Android (Termux or a native build).
+pub fn is_android() -> bool {
+    cfg!(target_os = "android") || is_termux()
 }
 
 #[cfg(test)]

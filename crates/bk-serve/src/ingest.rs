@@ -159,6 +159,7 @@ pub async fn embed_bookmark(state: &Arc<AppState>, id: Id) {
             .db
             .exec(move |tx| vectors::put(tx, id, "embed", data.len(), scale, &data))
             .await;
+        state.search.invalidate_vectors();
     }
 }
 

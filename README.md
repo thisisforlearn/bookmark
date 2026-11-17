@@ -113,6 +113,9 @@ bookmark serve --host 127.0.0.1 --port 8080
 
 Then open `http://127.0.0.1:8080` in your phone browser.
 
+The installer automatically picks the Android (Bionic) build on Termux so the crawler can
+resolve hostnames — Android has no `/etc/resolv.conf`, which a static musl binary needs.
+
 **Keep it alive.** Android kills background processes aggressively:
 
 ```sh

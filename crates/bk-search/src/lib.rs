@@ -88,6 +88,9 @@ pub struct Searcher {
     models: Arc<ModelSet>,
     cfg: SearchConfig,
     vocab: DashMap<Id, Arc<SymSpell>>,
+    /// Decoded embedding vectors per user, so the semantic arm does not re-read
+    /// and re-decode the whole vector table on every query.
+    vectors: DashMap<Id, Arc<Vec<bk_db::vectors::VectorRow>>>,
 }
 
 impl Searcher {
@@ -97,6 +100,7 @@ impl Searcher {
             models,
             cfg,
             vocab: DashMap::new(),
+            vectors: DashMap::new(),
         })
     }
 
@@ -111,6 +115,12 @@ impl Searcher {
     /// Drop the cached vocabulary for a user (call after imports/crawls).
     pub fn refresh_vocab(&self, user_id: Id) {
         self.vocab.remove(&user_id);
+        self.vectors.remove(&user_id);
+    }
+
+    /// Drop every cached vector set (after a bulk re-embed).
+    pub fn invalidate_vectors(&self) {
+        self.vectors.clear();
     }
 
     fn vocab_for(&self, user_id: Id) -> Arc<SymSpell> {

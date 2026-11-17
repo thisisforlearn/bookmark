@@ -162,5 +162,8 @@ CREATE TRIGGER IF NOT EXISTS bookmarks_tri_au AFTER UPDATE ON bookmarks BEGIN
     INSERT INTO fts_tri(rowid, title, text) VALUES (new.id, new.title, new.text);
 END;
 
+-- Title hits matter far more than body hits (10x / 2x / 1x).
+INSERT INTO bookmark_fts(bookmark_fts, rank) VALUES('rank', 'bm25(10.0, 2.0, 1.0)');
+
 INSERT OR IGNORE INTO meta (key, value) VALUES ('schema_version', '1');
 INSERT OR IGNORE INTO meta (key, value) VALUES ('created_at', CAST(strftime('%s','now') AS TEXT));

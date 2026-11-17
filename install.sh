@@ -68,6 +68,11 @@ detect_target() {
   local os arch
   os="$(uname -s)"
   arch="$(uname -m)"
+  # Termux/Android: use the Bionic build so DNS resolution works.
+  if is_termux && [ "$arch" = "aarch64" ]; then
+    echo "aarch64-linux-android"
+    return
+  fi
   case "$os:$arch" in
     Linux:x86_64|Linux:amd64) echo "x86_64-unknown-linux-musl" ;;
     Linux:aarch64|Linux:arm64) echo "aarch64-unknown-linux-musl" ;;
