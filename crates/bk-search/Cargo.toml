@@ -16,11 +16,8 @@ bk-db = { workspace = true }
 bk-infer = { workspace = true }
 bk-model = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
-aho-corasick = { workspace = true }
-memchr = { workspace = true }
 smallvec = { workspace = true }
 rustc-hash = { workspace = true }
 dashmap = { workspace = true }

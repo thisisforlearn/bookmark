@@ -13,14 +13,8 @@ authors = ["Vaibhav <thisisforlearn@users.noreply.github.com>"]
 [dependencies]
 thiserror = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
 toml = { workspace = true }
-tracing = { workspace = true }
-rand = { workspace = true }
-getrandom = { workspace = true }
-sha2 = { workspace = true }
 xxhash-rust = { workspace = true }
-url = { workspace = true }
 rusqlite = { workspace = true, optional = true }
 
 [features]

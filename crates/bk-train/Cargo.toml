@@ -19,15 +19,9 @@ bk-model = { path = "../bk-model" }
 bk-db = { path = "../bk-db" }
 bk-search = { path = "../bk-search" }
 bk-infer = { path = "../bk-infer" }
-serde = "1"
-serde_json = "1"
-tokio = { version = "1.54", features = ["rt-multi-thread", "macros", "sync", "time"] }
 indicatif = "0.18"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rand = "0.9"
-getrandom = "0.3"
-url = "2.5"
 
 
 [features]

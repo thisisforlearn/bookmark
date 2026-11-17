@@ -24,9 +24,7 @@ tower-http = { workspace = true }
 http = { workspace = true }
 bytes = { workspace = true }
 tokio = { workspace = true }
-tokio-stream = { workspace = true }
 askama = { workspace = true }
-mime_guess = { workspace = true }
 image = { workspace = true }
 base64 = { workspace = true }
 rand = { workspace = true }
@@ -36,6 +34,4 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 dashmap = { workspace = true }
-arc-swap = { workspace = true }
 once_cell = { workspace = true }
-rust-embed = { workspace = true }
