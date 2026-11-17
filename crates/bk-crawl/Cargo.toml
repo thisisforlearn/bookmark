@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Vaibhav
+
+[package]
+name = "bk-crawl"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "GPL-3.0-only"
+authors = ["Vaibhav <thisisforlearn@users.noreply.github.com>"]
+
+[dependencies]
+bk-core = { workspace = true }
+reqwest = { workspace = true }
+url = { workspace = true }
+idna = { workspace = true }
+encoding_rs = { workspace = true }
+whatlang = { workspace = true }
+scraper = { workspace = true }
+lol_html = { workspace = true }
+texting_robots = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+dashmap = { workspace = true }

@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Vaibhav
+
+[package]
+name = "bk-cli"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "GPL-3.0-only"
+authors = ["Vaibhav <thisisforlearn@users.noreply.github.com>"]
+description = "`bookmark` CLI: init, serve, watch, user, add, search, crawl, index, export/import, backup, model, doctor, service, update."
+
+[dependencies]
+bk-core = { workspace = true }
+bk-db = { workspace = true }
+bk-crawl = { workspace = true }
+bk-search = { workspace = true }
+bk-serve = { workspace = true }
+bk-ops = { workspace = true }
+bk-model = { workspace = true }
+bk-infer = { workspace = true }
+bk-train = { workspace = true, optional = true }
+
+clap = { workspace = true }
+axum = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+mimalloc = { workspace = true }
+indicatif = { workspace = true }
+rand = { workspace = true }
+getrandom = { workspace = true }
+
+[features]
+default = []
+train = ["dep:bk-train"]
+
+[[bin]]
+name = "bookmark"
+path = "src/main.rs"

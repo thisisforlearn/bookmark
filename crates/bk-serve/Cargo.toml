@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Vaibhav
+
+[package]
+name = "bk-serve"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "GPL-3.0-only"
+authors = ["Vaibhav <thisisforlearn@users.noreply.github.com>"]
+
+[dependencies]
+bk-core = { workspace = true }
+bk-db = { workspace = true }
+bk-crawl = { workspace = true }
+bk-search = { workspace = true }
+bk-model = { workspace = true }
+bk-infer = { workspace = true }
+sha2 = { workspace = true }
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+http = { workspace = true }
+bytes = { workspace = true }
+tokio = { workspace = true }
+tokio-stream = { workspace = true }
+askama = { workspace = true }
+mime_guess = { workspace = true }
+image = { workspace = true }
+base64 = { workspace = true }
+rand = { workspace = true }
+getrandom = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+dashmap = { workspace = true }
+arc-swap = { workspace = true }
+once_cell = { workspace = true }
+rust-embed = { workspace = true }

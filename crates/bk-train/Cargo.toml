@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Vaibhav
+#
+# Path-only optional dependency of bk-cli (`--features train`). Pure Rust: no Burn,
+# no wgpu, so it builds on every target including Termux.
+
+[package]
+name = "bk-train"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "GPL-3.0-only"
+authors = ["Vaibhav <thisisforlearn@users.noreply.github.com>"]
+
+[dependencies]
+bk-core = { path = "../bk-core" }
+bk-model = { path = "../bk-model" }
+bk-db = { path = "../bk-db" }
+bk-search = { path = "../bk-search" }
+bk-infer = { path = "../bk-infer" }
+serde = "1"
+serde_json = "1"
+tokio = { version = "1.54", features = ["rt-multi-thread", "macros", "sync", "time"] }
+indicatif = "0.18"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rand = "0.9"
+getrandom = "0.3"
+url = "2.5"
+
+
+[features]
+default = []
+cpu = []
+wgpu = []

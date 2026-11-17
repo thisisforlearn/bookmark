@@ -1,0 +1,126 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Vaibhav
+
+[workspace]
+resolver = "3"
+# bk-train is NOT a workspace member: it pulls in Burn+wgpu (~1 GB) and cannot build for
+# musl/Android. It is a path-only optional dependency of bk-cli, compiled only when
+# `--features train` is passed (Windows training binary).
+members = [
+    "crates/bk-core", "crates/bk-model", "crates/bk-infer",
+    "crates/bk-db", "crates/bk-crawl", "crates/bk-search",
+    "crates/bk-serve", "crates/bk-ops", "crates/bk-cli",
+]
+default-members = ["crates/bk-cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "GPL-3.0-only"
+authors = ["Vaibhav <thisisforlearn@users.noreply.github.com>"]
+repository = "https://github.com/thisisforlearn/bookmark"
+description = "Self-hostable multi-user bookmark server with a built-in crawler, FTS5 search and tiny self-trained int8 models."
+
+[workspace.dependencies]
+# internal crates
+bk-core = { path = "crates/bk-core" }
+bk-model = { path = "crates/bk-model" }
+bk-infer = { path = "crates/bk-infer" }
+bk-db = { path = "crates/bk-db" }
+bk-crawl = { path = "crates/bk-crawl" }
+bk-search = { path = "crates/bk-search" }
+bk-serve = { path = "crates/bk-serve" }
+bk-ops = { path = "crates/bk-ops" }
+bk-train = { path = "crates/bk-train" }
+
+# error / serialization
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.9"
+
+# logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# async + http
+tokio = { version = "1.54", features = [
+    "rt-multi-thread", "macros", "signal", "net", "fs", "io-util",
+    "sync", "time", "process",
+] }
+tokio-util = { version = "0.7", features = ["rt", "io"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+futures = "0.3"
+axum = { version = "0.8", features = ["http2", "multipart", "query", "form"] }
+tower = "0.5"
+tower-http = { version = "0.7", features = ["trace", "compression-gzip", "compression-br"] }
+http = "1"
+bytes = "1"
+
+# storage
+rusqlite = { version = "0.43", features = ["bundled"] }
+
+# crawl
+reqwest = { version = "0.13", default-features = false, features = [
+    "rustls", "rustls-native-certs", "http2", "brotli", "gzip", "zstd", "stream", "charset",
+] }
+url = { version = "2.5", features = ["serde"] }
+idna = "1"
+encoding_rs = "0.8"
+whatlang = "0.18"
+scraper = "0.29"
+lol_html = "3.0"
+texting_robots = "0.2"
+
+# templating / assets
+askama = "0.16"
+rust-embed = { version = "8.14", features = ["compression"] }
+mime_guess = "2"
+
+# crypto / hashing / ids
+argon2 = { version = "0.5", features = ["std"] }
+sha2 = "0.10"
+rand = "0.9"
+getrandom = "0.3"
+base64 = "0.22"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+
+# data structures / perf
+dashmap = "6"
+smallvec = { version = "1", features = ["union"] }
+rustc-hash = "2"
+aho-corasick = "1"
+memchr = "2"
+rayon = "1"
+memmap2 = "0.9"
+arc-swap = "1"
+once_cell = "1"
+
+# images
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+
+# cli / progress
+clap = { version = "4", features = ["derive", "env"] }
+indicatif = "0.18"
+mimalloc = "0.1"
+
+# archive
+tar = "0.4"
+zstd = "0.13"
+
+# dev
+divan = "0.1"
+proptest = "1.12"
+tempfile = "3"
+libc = "0.2"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+opt-level = 3
+
+[profile.dev.package."*"]
+opt-level = 2

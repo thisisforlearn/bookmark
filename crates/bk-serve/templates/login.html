@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Sign in · bookmark</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body class="centered">
+<main class="auth-card">
+  <div class="brand big"><span class="mark" aria-hidden="true">◆</span> bookmark</div>
+  <h1>Sign in</h1>
+  {% if let Some(err) = error %}
+  <p class="alert" role="alert">{{ err }}</p>
+  {% endif %}
+  <form method="post" action="/login" class="stack">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Username
+      <input name="username" autocomplete="username" required autofocus>
+    </label>
+    <label>Password
+      <input name="password" type="password" autocomplete="current-password" required>
+    </label>
+    <button class="btn primary" type="submit">Sign in</button>
+  </form>
+  {% if open_registration %}
+  <p class="muted">No account? <a href="/register">Create one</a></p>
+  {% endif %}
+</main>
+</body>
+</html>

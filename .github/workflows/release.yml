@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Vaibhav
+name: release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            features: "--features train"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - name: Install musl tools
+        if: contains(matrix.target, 'linux-musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Build
+        shell: bash
+        run: |
+          cargo build --release -p bk-cli --target ${{ matrix.target }} ${{ matrix.features }}
+      - name: Package
+        shell: bash
+        run: |
+          set -e
+          if [[ "${{ matrix.target }}" == *windows* ]]; then
+            cp "target/${{ matrix.target }}/release/bookmark.exe" "bookmark-${{ matrix.target }}.exe"
+            sha256sum "bookmark-${{ matrix.target }}.exe" > "bookmark-${{ matrix.target }}.exe.sha256"
+          else
+            cp "target/${{ matrix.target }}/release/bookmark" "bookmark-${{ matrix.target }}"
+            sha256sum "bookmark-${{ matrix.target }}" > "bookmark-${{ matrix.target }}.sha256"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bookmark-${{ matrix.target }}
+          path: |
+            bookmark-${{ matrix.target }}*
+      - name: Attach to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            bookmark-${{ matrix.target }}*
+            install.sh
+          generate_release_notes: true

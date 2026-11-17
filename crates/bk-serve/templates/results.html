@@ -1,0 +1,58 @@
+<section class="toolbar">
+  <div class="meta">
+    {% if query.is_empty() %}
+      <strong>{{ total }}</strong> bookmarks
+    {% else %}
+      <strong>{{ total }}</strong> results · {{ took_ms }} ms
+      {% if degraded %}<span class="badge warn" title="Some models are missing; using lexical search only">degraded</span>{% endif %}
+      {% if let Some(c) = corrected %}<span class="badge">did you mean <a href="/?q={{ c }}">{{ c }}</a>?</span>{% endif %}
+    {% endif %}
+  </div>
+  {% if !tags.is_empty() %}
+  <div class="filters">
+    {% for t in tags %}
+      <a class="chip {% if t.active %}active{% endif %}" href="/?q=tag:{{ t.name }}">{{ t.name }} <span class="count">{{ t.count }}</span></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+{% if hits.is_empty() %}
+  <section class="empty">
+    {% if query.is_empty() %}
+      <h2>Nothing saved yet</h2>
+      <p class="muted">Paste a URL or any text below to save your first bookmark.</p>
+    {% else %}
+      <h2>No matches for “{{ query }}”</h2>
+      <p class="muted">Try fewer words, or a different spelling.</p>
+    {% endif %}
+  </section>
+{% else %}
+  <ul class="cards" id="results">
+    {% for h in hits %}
+    <li class="card {% if h.pinned %}pinned{% endif %}" data-id="{{ h.id }}">
+      <a class="card-main" href="/b/{{ h.id }}">
+        <div class="card-head">
+          <span class="favicon" aria-hidden="true">{{ h.initial }}</span>
+          <span class="title">{{ h.title }}</span>
+          {% if h.pinned %}<span class="badge pin">pinned</span>{% endif %}
+          {% if h.has_shot %}<span class="badge">screenshot</span>{% endif %}
+        </div>
+        <div class="url">{{ h.site }}{% if !h.path.is_empty() %}<span class="path">{{ h.path }}</span>{% endif %}</div>
+        <p class="snippet">{{ h.snippet|safe }}</p>
+        {% if !h.tags.is_empty() %}
+        <div class="tags">{% for t in h.tags %}<a class="chip small" href="/?q=tag:{{ t }}">{{ t }}</a>{% endfor %}</div>
+        {% endif %}
+      </a>
+      <div class="card-actions">
+        <button class="btn ghost sm" data-pin="{{ h.id }}" data-pinned="{{ h.pinned }}" title="Pin">{% if h.pinned %}Unpin{% else %}Pin{% endif %}</button>
+        <button class="btn ghost sm danger" data-delete="{{ h.id }}" title="Delete">Delete</button>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  <nav class="pager">
+    {% if page > 0 %}<a class="btn ghost" href="/?q={{ query }}&page={{ page - 1 }}">← Newer</a>{% endif %}
+    {% if has_next %}<a class="btn ghost" href="/?q={{ query }}&page={{ page + 1 }}">Older →</a>{% endif %}
+  </nav>
+{% endif %}

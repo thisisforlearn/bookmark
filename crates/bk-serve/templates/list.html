@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{% if query.is_empty() %}Your bookmarks{% else %}{{ query }} · bookmark{% endif %}{% endblock %}
+{% block nav %}
+<form class="searchbar" method="get" action="/" role="search">
+  <input id="q" name="q" value="{{ query }}" placeholder="Search bookmarks…  (try tag:work, site:example.com)" autocomplete="off" spellcheck="false">
+  <button class="btn" type="submit">Search</button>
+</form>
+{% endblock %}
+{% block content %}
+<div id="results-wrap" data-query="{{ query }}">
+  {% include "results.html" %}
+</div>
+
+<section class="composer">
+  <h2>Add a bookmark</h2>
+  <form id="add-form" class="stack" data-csrf="{{ csrf }}">
+    <input name="target" placeholder="https://example.com/article  —  or any text to save" required autocomplete="off">
+    <div class="row">
+      <input name="tags" placeholder="tags (comma separated)" autocomplete="off">
+      <button class="btn primary" type="submit">Save</button>
+    </div>
+    <p class="muted small" id="add-status" role="status"></p>
+  </form>
+</section>
+{% endblock %}

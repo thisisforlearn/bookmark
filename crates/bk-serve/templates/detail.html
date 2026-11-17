@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ bm.title }} · bookmark{% endblock %}
+{% block content %}
+<article class="detail">
+  <div class="detail-head">
+    <span class="favicon big" aria-hidden="true">{{ bm.initial }}</span>
+    <div>
+      <h1>{{ bm.title }}</h1>
+      <a class="url" href="{{ bm.url }}" rel="noopener noreferrer" target="_blank">{{ bm.url }}</a>
+    </div>
+  </div>
+
+  <div class="detail-actions">
+    <button class="btn ghost sm" data-pin="{{ bm.id }}" data-pinned="{{ bm.pinned }}">
+      {% if bm.pinned %}Unpin{% else %}Pin{% endif %}
+    </button>
+    <button class="btn ghost sm danger" data-delete="{{ bm.id }}">Delete</button>
+    <form method="post" action="/bookmarks/{{ bm.id }}/share" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn ghost sm" type="submit">Create share link</button>
+    </form>
+  </div>
+
+  {% if bm.has_shot %}
+  <figure class="shot">
+    <img src="/screenshot/{{ bm.id }}" alt="Screenshot of {{ bm.title }}" loading="lazy">
+  </figure>
+  {% else %}
+  <form method="post" action="/bookmarks/{{ bm.id }}/screenshot" enctype="multipart/form-data" class="upload">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label class="btn ghost sm">Upload screenshot
+      <input type="file" name="image" accept="image/png,image/jpeg,image/webp" hidden onchange="this.form.submit()">
+    </label>
+  </form>
+  {% endif %}
+
+  {% if !bm.tags.is_empty() %}
+  <div class="tags">
+    {% for t in bm.tags %}<a class="chip small" href="/?q=tag:{{ t }}">{{ t }}</a>{% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="post" action="/bookmarks/{{ bm.id }}/tags" class="row tight">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input name="tags" value="{{ bm.tags_joined }}" placeholder="tags, comma separated">
+    <button class="btn ghost sm" type="submit">Save tags</button>
+  </form>
+
+  {% if !bm.note.is_empty() %}<p class="note">{{ bm.note }}</p>{% endif %}
+
+  {% if !bm.text.is_empty() %}
+  <section class="body-text">
+    <h2>Saved text</h2>
+    <p>{{ bm.text }}</p>
+  </section>
+  {% endif %}
+
+  {% if !shares.is_empty() %}
+  <section class="shares">
+    <h2>Share links</h2>
+    <ul>
+      {% for s in shares %}
+      <li class="row tight">
+        <a href="/share/{{ s.token }}" target="_blank" rel="noopener">/share/{{ s.token }}</a>
+        <form method="post" action="/shares/{{ s.id }}/revoke" class="inline">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button class="btn ghost sm danger" type="submit">Revoke</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <p class="muted small">Saved {{ bm.created_at_str }} · status {{ bm.status }}</p>
+</article>
+{% endblock %}

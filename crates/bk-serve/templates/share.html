@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>{{ bm.title }} · shared bookmark</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body class="page-share">
+<main class="page">
+  <article class="detail">
+    <div class="detail-head">
+      <span class="favicon big" aria-hidden="true">{{ bm.initial }}</span>
+      <div>
+        <h1>{{ bm.title }}</h1>
+        <a class="url" href="{{ bm.url }}" rel="noopener noreferrer" target="_blank">{{ bm.url }}</a>
+      </div>
+    </div>
+    {% if bm.has_shot %}
+    <figure class="shot"><img src="/share/{{ token }}/screenshot" alt="Screenshot of {{ bm.title }}" loading="lazy"></figure>
+    {% endif %}
+    {% if !bm.tags.is_empty() %}
+    <div class="tags">{% for t in bm.tags %}<span class="chip small">{{ t }}</span>{% endfor %}</div>
+    {% endif %}
+    {% if !bm.text.is_empty() %}
+    <section class="body-text">
+      <h2>Saved text</h2>
+      <p>{{ bm.text }}</p>
+    </section>
+    {% endif %}
+    <p class="muted small">Shared read-only · {{ bm.created_at_str }}</p>
+  </article>
+</main>
+</body>
+</html>

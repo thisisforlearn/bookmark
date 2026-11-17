@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Vaibhav
+
+[package]
+name = "bk-infer"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "GPL-3.0-only"
+authors = ["Vaibhav <thisisforlearn@users.noreply.github.com>"]
+
+[dependencies]
+bk-model = { workspace = true }
+bk-core = { workspace = true }
+thiserror = { workspace = true }
+smallvec = { workspace = true }
+tracing = { workspace = true }
+
+[features]
+default = ["avx2", "avxvnni"]
+avx2 = []
+avxvnni = []
+neon = []
