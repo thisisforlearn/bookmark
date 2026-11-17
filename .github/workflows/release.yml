@@ -17,9 +17,6 @@ jobs:
         target:
           - x86_64-unknown-linux-musl
           - aarch64-unknown-linux-musl
-          # Bionic build: Android has no /etc/resolv.conf, so a static musl
-          # binary cannot resolve DNS there. Termux users should use this one.
-          - aarch64-linux-android
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +42,38 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: bookmark-${{ matrix.target }}*
+          generate_release_notes: true
+
+  android:
+    # Termux/Android: Bionic build so DNS resolution works (Android has no
+    # /etc/resolv.conf, which static musl needs).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: nttld/setup-ndk@v1
+        id: ndk
+        with:
+          ndk-version: r27c
+          add-to-path: true
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: android
+      - name: Install cargo-ndk
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-ndk
+      - name: Build
+        run: cargo ndk -t arm64-v8a build --release -p bk-cli
+      - name: Package
+        run: |
+          cp target/aarch64-linux-android/release/bookmark bookmark-aarch64-linux-android
+          sha256sum bookmark-aarch64-linux-android > bookmark-aarch64-linux-android.sha256
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: bookmark-aarch64-linux-android*
           generate_release_notes: true
 
   windows-gnu:
