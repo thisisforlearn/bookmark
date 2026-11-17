@@ -5,11 +5,16 @@
 
 [licenses]
 allow = [
+    # our own license
+    "GPL-3.0-only",
+    # permissive
     "MIT", "MIT-0", "Apache-2.0", "Apache-1.1", "Apache-1.0",
     "BSD-2-Clause", "BSD-3-Clause", "BSD-4-Clause",
-    "ISC", "Zlib", "CC0-1.0", "Unlicense", "0BSD",
+    "ISC", "Zlib", "CC0-1.0", "Unlicense", "0BSD", "BSL-1.0",
     "Unicode-3.0", "Unicode-DFS-2016",
     "CDLA-Permissive-2.0",   # webpki-roots (rustls trust anchors)
+    # MPL-2.0 is file-level copyleft and GPL-3.0-compatible (secondary license)
+    "MPL-2.0",
 ]
 confidence-threshold = 0.9
 exceptions = [
@@ -20,6 +25,8 @@ exceptions = [
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
+# workspace path dependencies legitimately have no version requirement
+allow-wildcard-paths = true
 deny = [
     # Never link OpenSSL or native-tls: rustls only, so the musl build stays static.
     { name = "openssl" },
