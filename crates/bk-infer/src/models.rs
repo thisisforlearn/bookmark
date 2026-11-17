@@ -75,8 +75,8 @@ fn dequant_f32(mf: &ModelFile, name: &str) -> Result<Vec<f32>> {
     let mut out = Vec::with_capacity(n);
     match s.dtype {
         DType::F32 => {
-            for chunk in bytes.chunks_exact(4) {
-                out.push(f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]));
+            for chunk in bytes.as_chunks::<4>().0 {
+                out.push(f32::from_le_bytes(*chunk));
             }
         }
         DType::Int8 => {
@@ -85,9 +85,8 @@ fn dequant_f32(mf: &ModelFile, name: &str) -> Result<Vec<f32>> {
             }
         }
         DType::F16 => {
-            for chunk in bytes.chunks_exact(2) {
-                let h = u16::from_le_bytes([chunk[0], chunk[1]]);
-                out.push(f16_to_f32(h) * s.scale);
+            for chunk in bytes.as_chunks::<2>().0 {
+                out.push(f16_to_f32(u16::from_le_bytes(*chunk)) * s.scale);
             }
         }
     }
