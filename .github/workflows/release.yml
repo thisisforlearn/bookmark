@@ -10,19 +10,12 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  linux:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
-          - target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            features: "--features train"
-    runs-on: ${{ matrix.os }}
+        target: [x86_64-unknown-linux-musl, aarch64-unknown-linux-musl]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -32,32 +25,67 @@ jobs:
         with:
           key: ${{ matrix.target }}
       - name: Install musl tools
-        if: contains(matrix.target, 'linux-musl')
         run: sudo apt-get update && sudo apt-get install -y musl-tools
       - name: Build
-        shell: bash
-        run: |
-          cargo build --release -p bk-cli --target ${{ matrix.target }} ${{ matrix.features }}
+        run: cargo build --release -p bk-cli --target ${{ matrix.target }}
       - name: Package
-        shell: bash
         run: |
-          set -e
-          if [[ "${{ matrix.target }}" == *windows* ]]; then
-            cp "target/${{ matrix.target }}/release/bookmark.exe" "bookmark-${{ matrix.target }}.exe"
-            sha256sum "bookmark-${{ matrix.target }}.exe" > "bookmark-${{ matrix.target }}.exe.sha256"
-          else
-            cp "target/${{ matrix.target }}/release/bookmark" "bookmark-${{ matrix.target }}"
-            sha256sum "bookmark-${{ matrix.target }}" > "bookmark-${{ matrix.target }}.sha256"
-          fi
+          cp "target/${{ matrix.target }}/release/bookmark" "bookmark-${{ matrix.target }}"
+          sha256sum "bookmark-${{ matrix.target }}" > "bookmark-${{ matrix.target }}.sha256"
       - uses: actions/upload-artifact@v4
         with:
           name: bookmark-${{ matrix.target }}
-          path: |
-            bookmark-${{ matrix.target }}*
-      - name: Attach to release
-        uses: softprops/action-gh-release@v2
+          path: bookmark-${{ matrix.target }}*
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: bookmark-${{ matrix.target }}*
+          generate_release_notes: true
+
+  windows-gnu:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The GNU toolchain bundles its own MinGW linker (no Visual Studio needed).
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable-x86_64-pc-windows-gnu
+          targets: x86_64-pc-windows-gnu
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: windows-gnu
+      - name: Build (with training)
+        shell: bash
+        run: cargo +stable-x86_64-pc-windows-gnu build --release -p bk-cli --target x86_64-pc-windows-gnu --features train
+      - name: Package
+        shell: bash
+        run: |
+          cp target/x86_64-pc-windows-gnu/release/bookmark.exe bookmark-x86_64-pc-windows-gnu.exe
+          sha256sum bookmark-x86_64-pc-windows-gnu.exe > bookmark-x86_64-pc-windows-gnu.exe.sha256
+      - uses: softprops/action-gh-release@v2
         with:
           files: |
-            bookmark-${{ matrix.target }}*
+            bookmark-x86_64-pc-windows-gnu.exe*
             install.sh
+          generate_release_notes: true
+
+  windows-msvc:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: windows-msvc
+      - name: Build (with training)
+        run: cargo build --release -p bk-cli --target x86_64-pc-windows-msvc --features train
+      - name: Package
+        shell: bash
+        run: |
+          cp target/x86_64-pc-windows-msvc/release/bookmark.exe bookmark-x86_64-pc-windows-msvc.exe
+          sha256sum bookmark-x86_64-pc-windows-msvc.exe > bookmark-x86_64-pc-windows-msvc.exe.sha256
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: bookmark-x86_64-pc-windows-msvc.exe*
           generate_release_notes: true

@@ -4,7 +4,7 @@ A self-hostable, multi-user bookmark server that keeps **text, links, screenshot
 **searchable copy of every page**, with typo-tolerant search powered by small models you can
 train yourself. One static binary. Runs on a laptop, a server, or a phone via Termux.
 
-[Quickstart](#quickstart) · [Termux](#termux-android) · [LAN & Tailscale](#lan-and-tailscale) ·
+[Quickstart](#quickstart) · [Termux](#termux-android) · [Windows](#windows) · [LAN & Tailscale](#lan-and-tailscale) ·
 [Search syntax](#search-syntax) · [Models](#models-and-training) · [Backup](#backup-and-export) ·
 [Security](#security) · [Troubleshooting](#troubleshooting) · [License](#license)
 
@@ -80,6 +80,22 @@ cargo build --release
 ```
 
 Requirements: Rust 1.97+. SQLite is bundled — nothing else to install.
+
+### Windows
+
+Download `bookmark-x86_64-pc-windows-gnu.exe` from the
+[releases page](https://github.com/thisisforlearn/bookmark/releases), or build locally
+with the GNU toolchain (no Visual Studio needed):
+
+```powershell
+rustup toolchain install stable-x86_64-pc-windows-gnu
+rustup override set stable-x86_64-pc-windows-gnu
+winget install Kitware.CMake NASM.NASM     # needed by the TLS + SQLite C code
+cargo build --release -p bk-cli
+```
+
+If you see `linker link.exe not found`, you are on the MSVC target without Visual Studio
+Build Tools. See [docs/WINDOWS.md](docs/WINDOWS.md) for all three options.
 
 ---
 
@@ -319,6 +335,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 | Symptom | Fix |
 |---|---|
+| `linker link.exe not found` (Windows) | You're on the MSVC target without VS — use the GNU toolchain, see [docs/WINDOWS.md](docs/WINDOWS.md) |
 | `bookmark: command not found` | Add `~/.local/bin` (or `$PREFIX/bin`) to `PATH` |
 | Server exits immediately | `bookmark doctor` — usually a taken port or unreadable data dir |
 | Search shows **degraded** | Models not installed — `bookmark model train all --mode quick` |

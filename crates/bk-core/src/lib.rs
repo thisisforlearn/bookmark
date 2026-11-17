@@ -81,14 +81,20 @@ impl SimdFeatures {
     }
 }
 
-/// Validate a config file path exists and is readable; return the directory.
+/// Create the state directory if needed.
+///
+/// On Unix the directory is locked down to `0700`. On Windows the directory
+/// inherits the ACL of the user's profile, which is already user-only, so no
+/// extra work is needed there.
 pub fn state_dir(dir: &std::path::Path) -> std::io::Result<()> {
-    let dir = dir.to_path_buf();
-    std::fs::create_dir_all(&dir)?;
-    let meta = dir.metadata()?;
-    use std::os::unix::fs::PermissionsExt;
-    let mut perms = meta.permissions();
-    perms.set_mode(0o700);
-    std::fs::set_permissions(&dir, perms)?;
+    std::fs::create_dir_all(dir)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let meta = dir.metadata()?;
+        let mut perms = meta.permissions();
+        perms.set_mode(0o700);
+        std::fs::set_permissions(dir, perms)?;
+    }
     Ok(())
 }
